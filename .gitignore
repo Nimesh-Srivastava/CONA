@@ -1,0 +1,8 @@
+#executables
+main
+
+#dSYM files
+*.dSYM
+
+#old files
+*.old
