@@ -2,7 +2,7 @@
 
 **CONA** is a high-performance, modular animation engine built in C. It showcases advanced real-time graphics handling, procedural generation, and hot-reloadable architecture.
 
-![CONA Engine Demo](example.mov)
+<video src="example.mov" controls="controls" style="max-width: 100%;"></video>
 
 
 ## Key Features
