@@ -88,17 +88,21 @@ PLUG_EXPORT void plug_update(void) {
         DrawTextEx(
             GetFontDefault(),
             title,
-            (Vector2){ cx - size.x * 0.5f, cy + 80.0f },
+            (Vector2){ cx - size.x * 0.5f, cy - 30.0f },
             font_size,
             4,
             Fade(WHITE, alpha)
         );
 
+        const char *subtitle = "Clean Open Native Animation";
+        int sub_size = 20;
+        int sub_w = MeasureText(subtitle, sub_size);
+
         DrawText(
-            "Clean Open Native Animation",
-            cx - 140,
-            cy + 150,
-            16,
+            subtitle,
+            cx - sub_w * 0.5f,
+            cy + 40.0f,
+            sub_size,
             Fade(WHITE, alpha * 0.7f)
         );
     }
