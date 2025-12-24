@@ -91,9 +91,11 @@ static bool load_plugin(const char *filename) {
 ------------------------------------------------------------ */
 
 int main(void) {
+
     /* Window setup */
     float factor = 80.0f;
     InitWindow((int)(16 * factor), (int)(9 * factor), "CONA");
+    InitAudioDevice();
     SetTargetFPS(60);
 
     EnginePhase phase = PHASE_SPLASH;
@@ -132,6 +134,7 @@ int main(void) {
         }
     }
 
+    CloseAudioDevice();
     CloseWindow();
     return 0;
 }

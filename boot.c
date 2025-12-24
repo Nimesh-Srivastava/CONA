@@ -11,6 +11,8 @@
 #include "plug.h"
 
 #define MAX_LOG_LINES 12
+#define MATRIX_COLS 100
+#define MATRIX_ROWS 40
 
 typedef struct {
     float start_time;
@@ -18,12 +20,20 @@ typedef struct {
     int line_count;
     char lines[MAX_LOG_LINES][64];
     float line_times[MAX_LOG_LINES];
+    
+    // Matrix Rain state
+    float drops[MATRIX_COLS];
+    char chars[MATRIX_COLS][MATRIX_ROWS];
 } Plug;
 
 static Plug *p = NULL;
 
 static float rand_float(void) {
     return (float)rand() / (float)RAND_MAX;
+}
+
+static char rand_char(void) {
+    return (char)('0' + (rand() % 10)); // 0-9
 }
 
 PLUG_EXPORT void plug_init(void) {
@@ -57,6 +67,14 @@ PLUG_EXPORT void plug_init(void) {
         p->line_count++;
     }
 
+    // Init Matrix
+    for (int i = 0; i < MATRIX_COLS; ++i) {
+        p->drops[i] = rand_float() * -MATRIX_ROWS;
+        for (int j = 0; j < MATRIX_ROWS; ++j) {
+            p->chars[i][j] = rand_char();
+        }
+    }
+
     TraceLog(LOG_INFO, "CONA boot initialized");
 }
 
@@ -71,22 +89,54 @@ PLUG_EXPORT void plug_post_reload(void *state) {
 PLUG_EXPORT void plug_update(void) {
     float w = (float)GetScreenWidth();
     float h = (float)GetScreenHeight();
+    float dt = GetFrameTime();
 
     float t = (float)GetTime() - p->start_time;
-    const float duration = 4.5f;
+    const float duration = 5.0f;
 
     if (t > duration) {
         p->finished = true;
     }
 
+    // Update Matrix
+    for (int i = 0; i < MATRIX_COLS; ++i) {
+        p->drops[i] += dt * 15.0f; // Speed
+        if (p->drops[i] > MATRIX_ROWS) {
+            p->drops[i] = rand_float() * -10.0f;
+            for (int j = 0; j < MATRIX_ROWS; ++j) {
+                p->chars[i][j] = rand_char();
+            }
+        }
+    }
+
     BeginDrawing();
     ClearBackground(BLACK);
 
+    // Draw Matrix Rain
+    int font_size = 14;
+    for (int i = 0; i < MATRIX_COLS; ++i) {
+        for (int j = 0; j < MATRIX_ROWS; ++j) {
+            float y = (float)j;
+            if (y < p->drops[i] && y > p->drops[i] - 10.0f) {
+                float intensity = 1.0f - (p->drops[i] - y) / 10.0f;
+                Color color = (j % 3 == 0) ? GREEN : DARKGREEN;
+                color = Fade(color, intensity * 0.5f); // Background layer opacity
+                
+                // Randomly flicker characters
+                if (rand() % 100 < 2) p->chars[i][j] = rand_char();
+
+                DrawText(TextFormat("%c", p->chars[i][j]), i * font_size, j * font_size, font_size, color);
+            }
+        }
+    }
+
+    // Draw Terminal Text (Foreground)
+    DrawRectangle(0, 0, w, h, Fade(BLACK, 0.7f)); // Dim background for text readability
+
     int start_y = h / 2 - (p->line_count * 20) / 2;
-    
     for (int i = 0; i < p->line_count; ++i) {
         if (t >= p->line_times[i]) {
-            DrawText(p->lines[i], 100, start_y + i * 25, 20, GREEN);
+            DrawText(p->lines[i], 100, start_y + i * 25, 20, LIME);
         }
     }
     
