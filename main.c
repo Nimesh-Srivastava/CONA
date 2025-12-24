@@ -7,11 +7,11 @@
 
 int main(void) {
 
-    const char *libplug_path = "./libplug.dylib";
+    const char *libplug_path = "libplug.dylib";
     void *libplug = dlopen(libplug_path, RTLD_NOW);
 
     if(libplug == NULL) {
-        fprintf(stderr, "Error: could not load %s: %s\n", libplug_path, dlerror());
+        fprintf(stderr, "Error: %s\n", dlerror());
         return 1;
     }
     

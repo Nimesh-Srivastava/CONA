@@ -23,6 +23,7 @@ void libs(Nob_Cmd *cmd) {
 
     // runtime search path (portable)
     nob_cmd_append(cmd, "-Wl,-rpath,@loader_path/raylib/raylib-5.5_macos/lib");
+    nob_cmd_append(cmd, "-Wl,-rpath,@loader_path/");
 
     nob_cmd_append(cmd, "-lraylib");
 }
