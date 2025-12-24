@@ -46,18 +46,18 @@ bool load_plug(void) {
 int main(void) {
     if (!load_plug()) return 1;
 
-    InitWindow(800, 600, "CONA");
+    float factor = 50.0f;
+    InitWindow(16*factor, 8*factor, "CONA");
+    SetTargetFPS(60);
     plug_init();
 
-    SetTargetFPS(60);
-
     while (!WindowShouldClose()) {
-        // if (IsKeyPressed(KEY_R)) {
-        //     void *state = plug_pre_reload();
-        //     if (!load_plug()) return 1;
-        //     plug_post_reload(state);
-        // }
-        //
+        if (IsKeyPressed(KEY_R)) {
+            void *state = plug_pre_reload();
+            if (!load_plug()) return 1;
+            plug_post_reload(state);
+        }
+
         plug_update();
     }
 

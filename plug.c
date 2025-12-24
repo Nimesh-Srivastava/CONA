@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <math.h>
 
 #include <raylib.h>
 
@@ -32,7 +33,21 @@ PLUG_EXPORT void plug_post_reload(void *state) {
 }
 
 PLUG_EXPORT void plug_update(void) {
+    float w = GetScreenWidth();
+    float h = GetScreenHeight();
+    float t = GetTime();
+
     BeginDrawing();
-    ClearBackground(p->background);
+    ClearBackground(GetColor(0x181818FF));
+
+    float rw = 100.0;
+    float rh = 100.0;
+    float padding = rw * 0.15;
+    Color cell_color = RED;
+
+    for(size_t i = 0; i < 20; ++i) {
+        DrawRectangle(i * (rw + padding) - w * (sinf(t * 2) + 1) * 0.5 , h/2 - rh/2, rw, rh, cell_color);
+    }
+
     EndDrawing();
 }

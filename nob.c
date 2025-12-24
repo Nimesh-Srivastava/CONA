@@ -13,7 +13,7 @@ void cc(Nob_Cmd *cmd) {
     nob_cmd_append(cmd, "cc");
     nob_cmd_append(cmd, "-Wall", "-Wextra", "-g");
     #ifndef _WIN32
-         nob_cmd_append(cmd, "-std=c11"); // MSVC might not like this if using cl, but using cc/gcc implies MinGW/CodeBlocks on Windows usually or clang-cl? 
+         nob_cmd_append(cmd, "-std=c11"); 
          // Assuming 'cc' on Windows is MinGW/gcc or clang. If MSVC `cl`, flags are different.
          // For now, let's assume MinGW for Windows or clang.
     #endif
