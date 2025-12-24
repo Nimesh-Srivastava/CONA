@@ -72,6 +72,41 @@ bool build_plug(Nob_Cmd *cmd) {
     return nob_cmd_run_sync(*cmd);
 }
 
+
+bool build_splash(Nob_Cmd *cmd) {
+    cmd->count = 0;
+    cc(cmd);
+    #ifdef _WIN32
+        nob_cmd_append(cmd, "-shared", "-o", "cona_splash.dll", "splash.c");
+        nob_cmd_append(cmd, "-lraylib", "-lgdi32", "-lwinmm"); 
+        nob_cmd_append(cmd, "-L./raylib/raylib-5.5_win64_mingw/lib");
+    #elif defined(__APPLE__)
+        nob_cmd_append(cmd, "-dynamiclib", "-o", "libcona_splash.dylib", "splash.c");
+        libs(cmd);
+    #else
+        nob_cmd_append(cmd, "-shared", "-fPIC", "-o", "libcona_splash.so", "splash.c");
+        libs(cmd);
+    #endif
+    return nob_cmd_run_sync(*cmd);
+}
+
+bool build_boot(Nob_Cmd *cmd) {
+    cmd->count = 0;
+    cc(cmd);
+    #ifdef _WIN32
+        nob_cmd_append(cmd, "-shared", "-o", "cona_boot.dll", "boot.c");
+        nob_cmd_append(cmd, "-lraylib", "-lgdi32", "-lwinmm"); 
+        nob_cmd_append(cmd, "-L./raylib/raylib-5.5_win64_mingw/lib");
+    #elif defined(__APPLE__)
+        nob_cmd_append(cmd, "-dynamiclib", "-o", "libcona_boot.dylib", "boot.c");
+        libs(cmd);
+    #else
+        nob_cmd_append(cmd, "-shared", "-fPIC", "-o", "libcona_boot.so", "boot.c");
+        libs(cmd);
+    #endif
+    return nob_cmd_run_sync(*cmd);
+}
+
 bool build_main(Nob_Cmd *cmd) {
     cmd->count = 0;
     cc(cmd);
@@ -85,6 +120,8 @@ int main(int argc, char **argv) {
 
     Nob_Cmd cmd = {0};
 
+    if (!build_splash(&cmd)) return 1;
+    if (!build_boot(&cmd)) return 1;
     if (!build_plug(&cmd)) return 1;
     if (!build_main(&cmd)) return 1;
 

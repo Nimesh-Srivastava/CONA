@@ -1,67 +1,138 @@
 #include <stdio.h>
+#include <stdbool.h>
+
 #include <raylib.h>
+
 #include "plug.h"
 #include "platform.h"
 
-#ifdef _WIN32
-    const char *libplug_file_name = "plug.dll";
+/* ------------------------------------------------------------
+   Platform-specific plugin filenames
+------------------------------------------------------------ */
+
+#if defined(_WIN32)
+    #define SPLASH_PLUG "cona_splash.dll"
+    #define BOOT_PLUG   "cona_boot.dll"
+    #define MAIN_PLUG   "plug.dll"
 #elif defined(__APPLE__)
-    const char *libplug_file_name = "libplug.dylib";
+    #define SPLASH_PLUG "libcona_splash.dylib"
+    #define BOOT_PLUG   "libcona_boot.dylib"
+    #define MAIN_PLUG   "libplug.dylib"
 #else
-    const char *libplug_file_name = "libplug.so";
+    #define SPLASH_PLUG "libcona_splash.so"
+    #define BOOT_PLUG   "libcona_boot.so"
+    #define MAIN_PLUG   "libplug.so"
 #endif
 
-void *libplug = NULL;
+/* ------------------------------------------------------------
+   Engine phase state machine
+------------------------------------------------------------ */
 
-plug_init_t plug_init = NULL;
-plug_pre_reload_t plug_pre_reload = NULL;
-plug_post_reload_t plug_post_reload = NULL;
-plug_update_t plug_update = NULL;
+typedef enum {
+    PHASE_SPLASH,
+    PHASE_BOOT,
+    PHASE_MAIN
+} EnginePhase;
 
-bool load_plug(void) {
-    if (libplug != NULL) {
+/* ------------------------------------------------------------
+   Plugin state
+------------------------------------------------------------ */
+
+static void *libplug = NULL;
+
+static plug_init_t        plug_init        = NULL;
+static plug_pre_reload_t plug_pre_reload   = NULL;
+static plug_post_reload_t plug_post_reload = NULL;
+static plug_update_t     plug_update       = NULL;
+static plug_finished_t   plug_finished     = NULL;
+
+/* ------------------------------------------------------------
+   Plugin loader
+------------------------------------------------------------ */
+
+#define LOAD_SYM_REQ(name)                                      \
+    do {                                                        \
+        name = (name##_t)platform_get_symbol(libplug, #name);  \
+        if (!name) {                                           \
+            fprintf(stderr, "Missing symbol: %s\n", #name);    \
+            return false;                                      \
+        }                                                       \
+    } while (0)
+
+#define LOAD_SYM_OPT(name)                                      \
+    do {                                                        \
+        name = (name##_t)platform_get_symbol(libplug, #name);  \
+    } while (0)
+
+static bool load_plugin(const char *filename) {
+    if (libplug) {
         platform_free_library(libplug);
         libplug = NULL;
     }
 
-    libplug = platform_load_library(libplug_file_name);
-    if (libplug == NULL) {
+    libplug = platform_load_library(filename);
+    if (!libplug) {
+        fprintf(stderr, "Failed to load plugin: %s\n", filename);
         return false;
     }
 
-    #define LOAD_SYM(name) \
-        name = (name##_t) platform_get_symbol(libplug, #name); \
-        if (name == NULL) { \
-            return false; \
-        }
+    LOAD_SYM_REQ(plug_init);
+    LOAD_SYM_REQ(plug_pre_reload);
+    LOAD_SYM_REQ(plug_post_reload);
+    LOAD_SYM_REQ(plug_update);
+    LOAD_SYM_OPT(plug_finished); /* optional */
 
-    LOAD_SYM(plug_init);
-    LOAD_SYM(plug_pre_reload);
-    LOAD_SYM(plug_post_reload);
-    LOAD_SYM(plug_update);
-
+    plug_init();
     return true;
 }
 
-int main(void) {
-    if (!load_plug()) return 1;
+/* ------------------------------------------------------------
+   Entry point
+------------------------------------------------------------ */
 
-    float factor = 50.0f;
-    InitWindow(16*factor, 8*factor, "CONA");
+int main(void) {
+    /* Window setup */
+    float factor = 80.0f;
+    InitWindow((int)(16 * factor), (int)(9 * factor), "CONA");
     SetTargetFPS(60);
-    plug_init();
+
+    EnginePhase phase = PHASE_SPLASH;
+
+    /* Load splash plugin */
+    if (!load_plugin(SPLASH_PLUG)) {
+        CloseWindow();
+        return 1;
+    }
 
     while (!WindowShouldClose()) {
-        if (IsKeyPressed(KEY_R)) {
+
+        /* Hot reload only during MAIN phase */
+        if (phase == PHASE_MAIN && IsKeyPressed(KEY_R)) {
             void *state = plug_pre_reload();
-            if (!load_plug()) return 1;
+            if (!load_plugin(MAIN_PLUG)) {
+                CloseWindow();
+                return 1;
+            }
             plug_post_reload(state);
         }
 
+        /* Update active plugin */
         plug_update();
+
+        /* Phase transitions */
+        if (plug_finished && plug_finished()) {
+            if (phase == PHASE_SPLASH) {
+                phase = PHASE_BOOT;
+                if (!load_plugin(BOOT_PLUG)) break;
+            }
+            else if (phase == PHASE_BOOT) {
+                phase = PHASE_MAIN;
+                if (!load_plugin(MAIN_PLUG)) break;
+            }
+        }
     }
 
     CloseWindow();
-    
     return 0;
 }
+
