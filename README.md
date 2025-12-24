@@ -1,4 +1,4 @@
-# CONA (Clearn Open Native Animation)
+# CONA (Clean Open Native Animation)
 
 **CONA** is a high-performance, modular animation engine built in C. It showcases advanced real-time graphics handling, procedural generation, and hot-reloadable architecture.
 
