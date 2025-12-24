@@ -6,3 +6,6 @@ main
 
 #old files
 *.old
+
+#editor files
+.DS_Store
