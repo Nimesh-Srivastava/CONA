@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <string.h>
 #include <assert.h>
 
 #include <raylib.h>
@@ -9,20 +10,28 @@ typedef struct {
 
 static Plug *p = NULL;
 
-void plug_init(void) {
+#define PLUG_IMPL
+#include "plug.h"
+
+PLUG_EXPORT void plug_init(void) {
     p = malloc(sizeof(*p));
     assert(p != NULL);
+    memset(p, 0, sizeof(*p));
+    p->background = RED;
+    TraceLog(LOG_INFO, "----------------------------");
+    TraceLog(LOG_INFO, "Initialized plugin");
+    TraceLog(LOG_INFO, "----------------------------");
 }
 
-void *plug_pre_reload(void) {
+PLUG_EXPORT void *plug_pre_reload(void) {
     return p;
 }
 
-void plug_post_reload(void *state) {
+PLUG_EXPORT void plug_post_reload(void *state) {
     p = state;
 }
 
-void plug_update(void) {
+PLUG_EXPORT void plug_update(void) {
     BeginDrawing();
     ClearBackground(p->background);
     EndDrawing();
