@@ -1,0 +1,26 @@
+{
+  "shapes": [
+    {
+      "id": 1766750577649,
+      "type": "circle",
+      "pos": [
+        68,
+        63
+      ],
+      "size": 21.93171219946131,
+      "color": "#ffffff"
+    }
+  ],
+  "animations": [
+    {
+      "id": "anim_1766750580867",
+      "shapeId": 1766750577649,
+      "type": "translate_x",
+      "start": 0,
+      "end": 500,
+      "startTime": 0,
+      "duration": 2,
+      "loop": true
+    }
+  ]
+}
