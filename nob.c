@@ -59,14 +59,14 @@ bool build_plug(Nob_Cmd *cmd) {
     cmd->count = 0;
     cc(cmd);
     #ifdef _WIN32
-        nob_cmd_append(cmd, "-shared", "-o", "plug.dll", "plug.c");
+        nob_cmd_append(cmd, "-shared", "-o", "plug.dll", "plug.c", "cJSON.c");
         nob_cmd_append(cmd, "-lraylib", "-lgdi32", "-lwinmm"); 
         nob_cmd_append(cmd, "-L./raylib/raylib-5.5_win64_mingw/lib");
     #elif defined(__APPLE__)
-        nob_cmd_append(cmd, "-dynamiclib", "-o", "libplug.dylib", "plug.c");
+        nob_cmd_append(cmd, "-dynamiclib", "-o", "libplug.dylib", "plug.c", "cJSON.c");
         libs(cmd);
     #else
-        nob_cmd_append(cmd, "-shared", "-fPIC", "-o", "libplug.so", "plug.c");
+        nob_cmd_append(cmd, "-shared", "-fPIC", "-o", "libplug.so", "plug.c", "cJSON.c");
         libs(cmd);
     #endif
     return nob_cmd_run_sync(*cmd);
