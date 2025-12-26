@@ -1,5 +1,9 @@
 #include <stdio.h>
 #include <stdbool.h>
+#include <stdlib.h>
+#include <signal.h>
+#include <unistd.h>
+#include <sys/wait.h>
 
 #include <raylib.h>
 
@@ -47,6 +51,65 @@ static plug_update_t     plug_update       = NULL;
 static plug_finished_t   plug_finished     = NULL;
 
 /* ------------------------------------------------------------
+   Web server process management
+------------------------------------------------------------ */
+
+static pid_t web_server_pid = -1;
+
+static void cleanup_web_server(void) {
+    if (web_server_pid > 0) {
+        printf("Stopping web server (PID: %d)...\n", web_server_pid);
+        kill(web_server_pid, SIGTERM);
+        waitpid(web_server_pid, NULL, 0);
+        web_server_pid = -1;
+    }
+}
+
+static void signal_handler(int sig) {
+    (void)sig;
+    cleanup_web_server();
+    exit(0);
+}
+
+static bool spawn_web_server(void) {
+    pid_t pid = fork();
+    
+    if (pid < 0) {
+        fprintf(stderr, "Failed to fork web server process\n");
+        return false;
+    }
+    
+    if (pid == 0) {
+        // Child process
+        chdir("studio");
+        
+        // Redirect output to /dev/null to keep terminal clean
+        freopen("/dev/null", "w", stdout);
+        freopen("/dev/null", "w", stderr);
+        
+        execlp("npm", "npm", "run", "dev", NULL);
+        
+        // If exec fails
+        fprintf(stderr, "Failed to start web server\n");
+        exit(1);
+    }
+    
+    // Parent process
+    web_server_pid = pid;
+    printf("Web server started (PID: %d)\n", web_server_pid);
+    printf("Web UI available at http://localhost:3000\n");
+    
+    // Give the server time to start
+    sleep(3);
+    
+    // Auto-open browser
+    printf("Opening browser...\n");
+    system("open http://localhost:3000");
+    
+    return true;
+}
+
+/* ------------------------------------------------------------
    Plugin loader
 ------------------------------------------------------------ */
 
@@ -80,7 +143,7 @@ static bool load_plugin(const char *filename) {
     LOAD_SYM_REQ(plug_pre_reload);
     LOAD_SYM_REQ(plug_post_reload);
     LOAD_SYM_REQ(plug_update);
-    LOAD_SYM_OPT(plug_finished); /* optional */
+    LOAD_SYM_OPT(plug_finished);
 
     plug_init();
     return true;
@@ -91,10 +154,22 @@ static bool load_plugin(const char *filename) {
 ------------------------------------------------------------ */
 
 int main(void) {
+    
+    // Set up signal handlers for cleanup
+    signal(SIGINT, signal_handler);
+    signal(SIGTERM, signal_handler);
+    
+    // Register cleanup function
+    atexit(cleanup_web_server);
+    
+    // Start web server
+    if (!spawn_web_server()) {
+        fprintf(stderr, "Warning: Failed to start web server\n");
+    }
 
     /* Window setup */
     float factor = 80.0f;
-    InitWindow((int)(16 * factor), (int)(9 * factor), "CONA");
+    InitWindow((int)(16 * factor), (int)(9 * factor), "CONA Animation Studio");
     InitAudioDevice();
     SetTargetFPS(60);
 

@@ -9,3 +9,7 @@ main
 
 #editor files
 .DS_Store
+
+#media files
+*.png
+*.mp4
